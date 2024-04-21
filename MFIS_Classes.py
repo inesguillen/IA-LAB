@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 class FuzzySetsDict(dict):
-    
+
     def printFuzzySetsDict(self):
         for elem in self:
             print("setid:     ", elem)
             self[elem].printSet()
     
 class FuzzySet:
-    var = ""	        # variable of the fuzzy set (ex.: Age)
-    label = ""		# label of the specific fuzzy set (ex.: Young)
-    x = []		# list of abscissas, from xmin to xmax, 1 by 1
-    y = []		# list of ordinates (float)
-    memDegree = 0       # membership degree for the current application
+    def __init__(self):
+        self.var = ""	        # variable of the fuzzy set (ex.: Age)
+        self.label = ""		# label of the specific fuzzy set (ex.: Young)
+        self.x = []		# list of abscissas, from xmin to xmax, 1 by 1
+        self.y = []		# list of ordinates (float)
+        self.memDegree = 0       # membership degree for the current application
 
     def printSet(self):
         print("var:       ", self.var)
@@ -27,12 +28,13 @@ class RuleList(list):
             elem.printRule()
 
 class Rule:
-    ruleName = ""	# name of the rule (str)
-    antecedent = []	# list of setids		
-    consequent = ""	# just one setid
-    strength = 0	# float
-    consequentX = []	# output fuzzySet, abscissas
-    consequentY = []	# output fuzzySet, ordinates
+    def __init__(self):
+        self.ruleName = ""	# name of the rule (str)
+        self.antecedent = []	# list of setids
+        self.consequent = ""	# just one setid
+        self.strength = 0	# float
+        self.consequentX = []	# output fuzzySet, abscissas
+        self.consequentY = []	# output fuzzySet, ordinates
 
     def printRule(self):
         print("ruleName: ", self.ruleName)
@@ -42,8 +44,11 @@ class Rule:
         print()
 
 class Application:
-    appId = ""          # application identifier (str)
-    data = []		# list of ValVarPair
+
+    def __init__(self):
+
+        self.appId = ""          # application identifier (str)
+        self.data = []		# list of ValVarPair
 
     def printApplication(self):
         print("App ID: ", self.appId)
