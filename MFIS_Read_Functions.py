@@ -4,6 +4,7 @@ import skfuzzy as skf
 import matplotlib.pyplot as plt
 from MFIS_Classes import *
 
+
 def readFuzzySetsFile(fleName):
     """
     This function reads a file containing fuzzy set descriptions

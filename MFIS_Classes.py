@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 class FuzzySetsDict(dict):
-
     def printFuzzySetsDict(self):
         for elem in self:
             print("setid:     ", elem)
@@ -44,7 +43,6 @@ class Rule:
         print()
 
 class Application:
-
     def __init__(self):
 
         self.appId = ""          # application identifier (str)
@@ -55,3 +53,5 @@ class Application:
         for elem in self.data:
             print(elem[0], " is ", elem[1])
         print()
+
+
