@@ -14,25 +14,27 @@ def trapezoidal_func(x, a, b, c, d):
         return 1  # Constant
     elif c < x < d:
         return (d - x) / (d - c)  # Linear decrease
-    else:
+    elif d <= x:
         return 0
 
 
 def fuzzify(fuzzySets, application):
-    fuzzified_data = {}  # Dictionary to store degree for each fuzzy set
+    data = {}  # Dictionary to store degree for each fuzzy set
     # Loop through each variable-value
     for var, value in application.data:
         # Find fuzzy sets corresponding to the variable
         for fuzzy_set_key, fuzzy_set in fuzzySets.items():
             if fuzzy_set.var == var:
+                #if len(fuzzy_set.x) >= 4:
                 # Calculate the degree for the given value
-                a, b, c, d = fuzzy_set.x[0], fuzzy_set.x[1], fuzzy_set.x[2], fuzzy_set.x[3]
+                    #a, b, c, d = fuzzy_set.x[0], fuzzy_set.x[1], fuzzy_set.x[2], fuzzy_set.x[3]
+                a, b, c, d = fuzzy_set.x[:4]
                 degree = trapezoidal_func(value, a, b, c, d)
-                    # np.interp(value, fuzzy_set.x, fuzzy_set.y)
                 # Store the degree in the dictionary
-                fuzzified_data[fuzzy_set_key] = degree
-                print(f"Fuzzified {fuzzy_set_key}: {degree}")  # Debug print
-    return fuzzified_data
+                data[fuzzy_set_key] = degree
+                print(f"Fuzzify {fuzzy_set_key}: {degree}")  # Debug print
+
+    return data
 
 
 def apply_rules(rules_List, fuzzyData):
@@ -65,11 +67,12 @@ def defuzzify(rule_strengths):
 
     # Find the maximum strength (the strongest output among all rules)
     if strengths:
-        final_risk = np.max(strengths)  # Use the maximum rule strength
+        risks = np.max(strengths)  # Use the maximum rule strength
     else:
-        final_risk = 0  # Default to zero risk
-    print(f"Final Risk: {final_risk}")  # Debug print
-    return final_risk
+        risks = 0  # Default to zero risk
+
+    print(f"Final Risk: {risks}")  # Debug print
+    return risks
 
 
 def process_applications(fuzzySets, rules_List, applications):
@@ -78,16 +81,15 @@ def process_applications(fuzzySets, rules_List, applications):
     for app in applications:
         fuzzyData = fuzzify(fuzzySets, app)  # Fuzzify the input data
         rule_strengths = apply_rules(rules_List, fuzzyData)  # Apply the inference rules
-        final_risk = defuzzify(rule_strengths)  # Defuzzify the output to get the risk score
-        result.append((app.appId, final_risk))  # Store the result (application ID and risk score)
+        risks = defuzzify(rule_strengths)  # Defuzzify the output to get the risk score
+        result.append((app.appId, risks))  # Store the result (application ID and risk score)
     return result
 
 
-fuzzy_sets = readFuzzySetsFile('Files/InputVarSets.txt') # Read the fuzzy sets
+fuzzy_sets = readFuzzySetsFile('Files/InputVarSets.txt')  # Read the fuzzy sets
 # fuzzySetsDict.printFuzzySetsDict()
 rulesList = readRulesFile()  # Read Inference Rules
 application = readApplicationsFile()  # Read Loan Applications
-
 results = process_applications(fuzzy_sets, rulesList, application)
 
 # Write results to a file
