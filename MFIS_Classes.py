@@ -12,7 +12,7 @@ class FuzzySet:
         self.label = ""		    # label of the specific fuzzy set (ex.: Young)
         self.x = []		        # list of abscissas, from xmin to xmax, 1 by 1
         self.y = []		        # list of ordinates (float)
-        self.memDegree = 0      # membership degree for the current application
+        self.memDegree = 0.0    # membership degree for the current application
 
     def printSet(self):
         print("var:       ", self.var)
@@ -34,7 +34,7 @@ class Rule:
         self.ruleName = ""	    # name of the rule (str)
         self.antecedent = []    # list of setids
         self.consequent = ""    # just one setid
-        self.strength = 0	    # float
+        self.strength = 0.0     # float
         self.consequentX = []   # output fuzzySet, abscissas
         self.consequentY = []   # output fuzzySet, ordinates
 

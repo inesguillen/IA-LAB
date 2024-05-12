@@ -6,10 +6,8 @@ from MFIS_Classes import *
 
 
 def readFuzzySetsFile(fleName):
-    """
-    This function reads a file containing fuzzy set descriptions
-    and returns a dictionary with all of them
-    """
+    """ This function reads a file containing fuzzy set descriptions
+    and returns a dictionary with all of them """
     fuzzySetsDict = FuzzySetsDict()  # dictionary to be returned
     inputFile = open(fleName, 'r')
     line = inputFile.readline()
