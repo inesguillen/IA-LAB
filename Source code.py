@@ -4,27 +4,24 @@ import numpy as np
 import skfuzzy as skf
 
 
-def plot_membership_function(fuzzySets):
+def plot_membership_function(fuzzySets, fuzzy_data):
     """Plots the membership functions of the fuzzy sets."""
-    for fuzzy_set_key, fuzzy_set in fuzzySets.items():
-        plt.figure()
-        plt.plot(fuzzy_set.x, fuzzy_set.y, label=fuzzy_set.label)
-        plt.xlabel(fuzzy_set.var)
-        plt.ylabel('Membership Degree')
-        plt.title(f'Membership Function: {fuzzy_set.label}')
-        plt.legend()
-        plt.grid(True)
-        plt.show()
+    for fs in fuzzySets.values():
+        for var in {fs.var}:
+            plt.figure()
+            plt.title(f'Functions for {var}')
+            plt.xlabel(var)
+            plt.ylabel('Degree')
+            for label, fuzzy_set in fuzzySets.items():
+                if fuzzy_set.var == var:
+                    plt.plot(fuzzy_set.x, fuzzy_set.y, label=label)
+                    if label in fuzzy_data:
+                        degree = fuzzy_data[label]
+                        plt.fill_between(fuzzy_set.x, 0, fuzzy_set.y, where=fuzzy_set.y <= degree, alpha=0.3)
 
-
-'''def trapezoidal_func(x, fuzzy_set):  # a, b, c, d):
-    """ Calculates the degree given a value x """
-    # return skf.trapmf(x, [a, b, c, d])
-    a, b, c, d = fuzzy_set.x[-4:]
-    print(f"a={a}, b={b}, c={c}, d={d}, x={x}")
-    degrees = skf.trapmf(x, [a, b, c, d])
-    print("Membership degrees:", degrees)
-    return degrees'''
+            plt.legend()
+            plt.grid(True)
+            plt.show()
 
 
 def fuzzify(fuzzySets, data):
@@ -35,7 +32,7 @@ def fuzzify(fuzzySets, data):
             if fuzzy_set.var == var:
                 degree = skf.interp_membership(fuzzy_set.x, fuzzy_set.y, value)
                 fuzzy_data[fuzzy_set_key] = degree  # Store the degree in the dictionary
-                # print(f"Fuzzify {fuzzy_set_key}: Value={value}, Degree={degree}")  # Debug print
+                print(f"Fuzzify {fuzzy_set_key}: Value={value}, Degree={degree}")  # Debug print
     return fuzzy_data
 
 
@@ -52,21 +49,11 @@ def apply_rules(rules_List, fuzzyData):
         if antecedent_strengths:  # Determine rule strength
             rule_strength = min(antecedent_strengths)  # Use minimum for AND logic
         rule_strengths.append((rule.consequent, rule_strength))
-        # print(f"Rule: {rule.ruleName}, Antecedents: {rule.antecedent}, Consequent: {rule.consequent}, Rule Strength: {rule_strength}")  # Debug print
-    # print(f"Rule strenghts: {rule_strengths}")
     return rule_strengths
 
 
 def defuzzify(rule_strengths):
     risk = np.arange(0, 100.1, 0.1)  # creates an array ranging from 0 to 100
-
-    '''low_risk = skf.trapmf(risk, [-20, -10, 30, 50])
-    medium_risk = skf.trapmf(risk, [10, 40, 70, 90])
-    high_risk = skf.trapmf(risk, [50, 70, 100, 111])
-
-    low_risk_degree = np.zeros_like(risks)
-    medium_risk_degree = np.zeros_like(risks)
-    high_risk_degree = np.zeros_like(risks)'''
     result = {'LowR': 0, 'MediumR': 0, 'HighR': 0}
 
     for rule, degree in rule_strengths:
@@ -76,13 +63,13 @@ def defuzzify(rule_strengths):
             result['MediumR'] = max(result['MediumR'], degree)
         elif rule == 'Risk=HighR':
             result['HighR'] = max(result['HighR'], degree)
-        # print(f"Rule: {rule}, Degree: {degree}")
 
     aggregated_strengths = [result['LowR'], result['MediumR'], result['HighR']]
-    print("list max strenght: ", aggregated_strengths )
-    centroid = skf.defuzz(risk, skf.trimf(risk, [0, 100, 100]), 'centroid')   #, aggregated_strengths)
-    print("centroid: ", centroid)
+    print("list max strenght: ", aggregated_strengths)
+    centroid = skf.defuzz(risk, skf.trimf(risk, [0, 100, 100]), 'centroid')  # , aggregated_strengths)
+    # print("centroid: ", centroid)
     return centroid
+    # return aggregated_strengths
 
 
 def process_applications(fuzzySets, rules_List, applications):
@@ -90,15 +77,22 @@ def process_applications(fuzzySets, rules_List, applications):
     result = []
     for app in applications:
         print(f"Processing Application ID: {app.appId}")  # Debug print
-        print(f"Application data: {app.data}")
+        # print(f"Application data: {app.data}")
+        # print(f"fuzzy sets item: {fuzzySets.items()}")
+        # print(f"fuzzy sets value: {fuzzySets.values()}")
+
         fuzzyData = fuzzify(fuzzySets, app.data)  # Fuzzify the input data
         print(f"fuzzy data: {fuzzyData}")
         rule_strengths = apply_rules(rules_List, fuzzyData)  # Apply the inference rules
         print(f"rule_strengths: {rule_strengths}")
         risks = defuzzify(rule_strengths)  # De-fuzzify the output to get the risk score
         print(f"risks: {risks}")
+        # plot_risk_membership_functions(risks)
         result.append((app.appId, risks))  # Store the result (application ID and risk score)
         print(f"result: {result}")
+        # centroid = calculate_centroid(risk, fuzzyData)
+        # plot_aggregated_result(risk, fuzzyData, centroid)
+        plot_membership_function(fuzzySets, fuzzyData)
     return result
 
 
@@ -108,7 +102,7 @@ fuzzy_sets = readFuzzySetsFile('Files/InputVarSets.txt')  # Read the fuzzy sets
 rulesList = readRulesFile()  # Read Inference Rules
 application = readApplicationsFile()  # Read Loan Applications
 results = process_applications(fuzzy_sets, rulesList, application)
-# plot_membership_function(fuzzy_sets)
+
 
 # Write results to a file
 with open("Files/Results.txt", "w") as output_file:
