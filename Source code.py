@@ -5,7 +5,7 @@ import skfuzzy as skf
 
 
 def plot_degree_function(fuzzySets, fuzzy_data):
-    ''' Plots the functions of the fuzzy sets '''
+    """ Plots the functions of the fuzzy sets """
     for fs in fuzzySets.values():
         for var in {fs.var}:
             plt.figure()
@@ -17,8 +17,7 @@ def plot_degree_function(fuzzySets, fuzzy_data):
                     plt.plot(fuzzy_set.x, fuzzy_set.y, label=label)
                     if label in fuzzy_data:
                         degree = fuzzy_data[label]
-                        plt.fill_between(fuzzy_set.x, 0, fuzzy_set.y, where=fuzzy_set.y <= degree, alpha=0.3)
-
+                        plt.fill_between(fuzzy_set.x, 0.0, fuzzy_set.y, where=(fuzzy_set.y <= degree), alpha=0.3)
             plt.legend()
             plt.grid(True)
             plt.show()
@@ -29,12 +28,9 @@ def fuzzify(fuzzy_sets, data):
     for var, value in data:  # Loop through each variable-value
         # Find fuzzy sets corresponding to the variable
         for fuzzy_set_key, fuzzy_set in fuzzy_sets.items():
-            # print(f"fuzzy sets items : {fuzzySets.items()}")
             if fuzzy_set.var == var:
                 degree = skf.interp_membership(fuzzy_set.x, fuzzy_set.y, value)
                 fuzzy_data[fuzzy_set_key] = degree  # Store the degree in the dictionary
-                # print(f"Fuzzify {fuzzy_set_key}: Value={value}, Degree={degree}")  # Debug print
-        # print(f"fuzzy data: {fuzzy_data}")
     return fuzzy_data
 
 
@@ -44,13 +40,11 @@ def apply_rules(rules_List, fuzzy_data):
     for rule in rules_List:  # Read each rule
         antecedent_degrees = []  # Empty list to store the degrees of the antecedents
         for antecedent in rule.antecedent:
-            # print(f"Antecedent: {antecedent}")
             if antecedent in fuzzy_data:  # Check if the variable exists
                 antecedent_degrees.append(fuzzyData[antecedent])
         if antecedent_degrees:  # Determine rule degree
             rule_degree = min(antecedent_degrees)  # Use minimum for AND logic
             degrees.append((rule.consequent, rule_degree))  # Add to the list
-    # print("rule strength: ", rule_strengths)
     return degrees
 
 
@@ -67,20 +61,21 @@ def defuzzify(rule_strengths):
             results['HighR'] = max(results['HighR'], degree)  # Get the max degree from this label
 
     max_degrees = [results['LowR'], results['MediumR'], results['HighR']]  # Array with the final max degrees values
-    # print("list max degree: ", max_degrees)
+    print("list max degree: ", max_degrees)
 
     low_risk = skf.trapmf(risks, [-20, -10, 30, 50])
     medium_risk = skf.trapmf(risks, [10, 40, 70, 90])
     high_risk = skf.trapmf(risks, [50, 70, 100, 111])
 
+    # Calculate the area for each trapezoidal function
     weighted_functions = [
         low_risk * max_degrees[0],
         medium_risk * max_degrees[1],
         high_risk * max_degrees[2]
     ]
 
-    combined_function = np.sum(weighted_functions, axis=0)
-    centroid = skf.defuzz(risks, combined_function, 'centroid')  # Get centroid for this application
+    combined_function = np.sum(weighted_functions, axis=0)  # Sum of all area
+    centroid = skf.defuzz(risks, combined_function, 'centroid')  # Get centroid
     return centroid
 
 
@@ -91,16 +86,12 @@ application = readApplicationsFile()  # Read Loan Applications
 
 result = []
 for app in application:
-    print(f"Processing Application ID: {app.appId}")  # Debug print
     fuzzyData = fuzzify(fuzzySets, app.data)  # Fuzzify the input data
-    print(f"fuzzy data: {fuzzyData}")
     rule_degrees = apply_rules(rulesList, fuzzyData)  # Apply the inference rules
-    print(f"rule_degrees: {rule_degrees}")
     final_centroid = defuzzify(rule_degrees)  # De-fuzzify the output to get the risk score
-    print(f"centroid: {final_centroid}")
     result.append((app.appId, final_centroid))  # Store the result (application ID and risk score)
+    plot_degree_function(fuzzySets, fuzzyData)  # Show graph of each variable for each application
 
-print(f"results: {result}")
 # Write results to a file
 with open("Files/Results.txt", "w") as output_file:
     for app_id, risk in result:
