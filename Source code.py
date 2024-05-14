@@ -4,8 +4,8 @@ import numpy as np
 import skfuzzy as skf
 
 
-def plot_membership_function(fuzzySets, fuzzy_data):
-    """Plots the membership functions of the fuzzy sets."""
+def plot_degree_function(fuzzySets, fuzzy_data):
+    ''' Plots the functions of the fuzzy sets '''
     for fs in fuzzySets.values():
         for var in {fs.var}:
             plt.figure()
@@ -24,87 +24,84 @@ def plot_membership_function(fuzzySets, fuzzy_data):
             plt.show()
 
 
-def fuzzify(fuzzySets, data):
+def fuzzify(fuzzy_sets, data):
     fuzzy_data = {}  # Dictionary to store degree for each fuzzy set
     for var, value in data:  # Loop through each variable-value
         # Find fuzzy sets corresponding to the variable
-        for fuzzy_set_key, fuzzy_set in fuzzySets.items():
+        for fuzzy_set_key, fuzzy_set in fuzzy_sets.items():
+            # print(f"fuzzy sets items : {fuzzySets.items()}")
             if fuzzy_set.var == var:
                 degree = skf.interp_membership(fuzzy_set.x, fuzzy_set.y, value)
                 fuzzy_data[fuzzy_set_key] = degree  # Store the degree in the dictionary
-                print(f"Fuzzify {fuzzy_set_key}: Value={value}, Degree={degree}")  # Debug print
+                # print(f"Fuzzify {fuzzy_set_key}: Value={value}, Degree={degree}")  # Debug print
+        # print(f"fuzzy data: {fuzzy_data}")
     return fuzzy_data
 
 
-def apply_rules(rules_List, fuzzyData):
+def apply_rules(rules_List, fuzzy_data):
     """ Apply the inference rules to the fuzzified data """
-    rule_strengths = []  # List to store rule strengths
+    degrees = []  # List to store rule strengths
     for rule in rules_List:  # Read each rule
-        antecedent_strengths = []  # Empty list to store the strengths of the antecedents
+        antecedent_degrees = []  # Empty list to store the degrees of the antecedents
         for antecedent in rule.antecedent:
             # print(f"Antecedent: {antecedent}")
-            if antecedent in fuzzyData:
-                antecedent_strengths.append(fuzzyData[antecedent])
-        # print("antecedent strenght: ", antecedent_strengths)
-        if antecedent_strengths:  # Determine rule strength
-            rule_strength = min(antecedent_strengths)  # Use minimum for AND logic
-        rule_strengths.append((rule.consequent, rule_strength))
-    return rule_strengths
+            if antecedent in fuzzy_data:  # Check if the variable exists
+                antecedent_degrees.append(fuzzyData[antecedent])
+        if antecedent_degrees:  # Determine rule degree
+            rule_degree = min(antecedent_degrees)  # Use minimum for AND logic
+            degrees.append((rule.consequent, rule_degree))  # Add to the list
+    # print("rule strength: ", rule_strengths)
+    return degrees
 
 
 def defuzzify(rule_strengths):
-    risk = np.arange(0, 100.1, 0.1)  # creates an array ranging from 0 to 100
-    result = {'LowR': 0, 'MediumR': 0, 'HighR': 0}
+    risks = np.arange(0, 100.1, 0.1)  # Create an array ranging from 0 to 100
+    results = {'LowR': 0, 'MediumR': 0, 'HighR': 0}
 
     for rule, degree in rule_strengths:
         if rule == 'Risk=LowR':
-            result['LowR'] = max(result['LowR'], degree)
+            results['LowR'] = max(results['LowR'], degree)  # Get the max degree from this label
         elif rule == 'Risk=MediumR':
-            result['MediumR'] = max(result['MediumR'], degree)
+            results['MediumR'] = max(results['MediumR'], degree)  # Get the max degree from this label
         elif rule == 'Risk=HighR':
-            result['HighR'] = max(result['HighR'], degree)
+            results['HighR'] = max(results['HighR'], degree)  # Get the max degree from this label
 
-    aggregated_strengths = [result['LowR'], result['MediumR'], result['HighR']]
-    print("list max strenght: ", aggregated_strengths)
-    centroid = skf.defuzz(risk, skf.trimf(risk, [0, 100, 100]), 'centroid')  # , aggregated_strengths)
-    # print("centroid: ", centroid)
+    max_degrees = [results['LowR'], results['MediumR'], results['HighR']]  # Array with the final max degrees values
+    # print("list max degree: ", max_degrees)
+
+    low_risk = skf.trapmf(risks, [-20, -10, 30, 50])
+    medium_risk = skf.trapmf(risks, [10, 40, 70, 90])
+    high_risk = skf.trapmf(risks, [50, 70, 100, 111])
+
+    weighted_functions = [
+        low_risk * max_degrees[0],
+        medium_risk * max_degrees[1],
+        high_risk * max_degrees[2]
+    ]
+
+    combined_function = np.sum(weighted_functions, axis=0)
+    centroid = skf.defuzz(risks, combined_function, 'centroid')  # Get centroid for this application
     return centroid
-    # return aggregated_strengths
-
-
-def process_applications(fuzzySets, rules_List, applications):
-    """ Process loan applications """
-    result = []
-    for app in applications:
-        print(f"Processing Application ID: {app.appId}")  # Debug print
-        # print(f"Application data: {app.data}")
-        # print(f"fuzzy sets item: {fuzzySets.items()}")
-        # print(f"fuzzy sets value: {fuzzySets.values()}")
-
-        fuzzyData = fuzzify(fuzzySets, app.data)  # Fuzzify the input data
-        print(f"fuzzy data: {fuzzyData}")
-        rule_strengths = apply_rules(rules_List, fuzzyData)  # Apply the inference rules
-        print(f"rule_strengths: {rule_strengths}")
-        risks = defuzzify(rule_strengths)  # De-fuzzify the output to get the risk score
-        print(f"risks: {risks}")
-        # plot_risk_membership_functions(risks)
-        result.append((app.appId, risks))  # Store the result (application ID and risk score)
-        print(f"result: {result}")
-        # centroid = calculate_centroid(risk, fuzzyData)
-        # plot_aggregated_result(risk, fuzzyData, centroid)
-        plot_membership_function(fuzzySets, fuzzyData)
-    return result
 
 
 # MAIN FUNCTION
-fuzzy_sets = readFuzzySetsFile('Files/InputVarSets.txt')  # Read the fuzzy sets
-# fuzzySetsDict.printFuzzySetsDict()
+fuzzySets = readFuzzySetsFile('Files/InputVarSets.txt')  # Read the fuzzy sets
 rulesList = readRulesFile()  # Read Inference Rules
 application = readApplicationsFile()  # Read Loan Applications
-results = process_applications(fuzzy_sets, rulesList, application)
 
+result = []
+for app in application:
+    print(f"Processing Application ID: {app.appId}")  # Debug print
+    fuzzyData = fuzzify(fuzzySets, app.data)  # Fuzzify the input data
+    print(f"fuzzy data: {fuzzyData}")
+    rule_degrees = apply_rules(rulesList, fuzzyData)  # Apply the inference rules
+    print(f"rule_degrees: {rule_degrees}")
+    final_centroid = defuzzify(rule_degrees)  # De-fuzzify the output to get the risk score
+    print(f"centroid: {final_centroid}")
+    result.append((app.appId, final_centroid))  # Store the result (application ID and risk score)
 
+print(f"results: {result}")
 # Write results to a file
 with open("Files/Results.txt", "w") as output_file:
-    for app_id, risk in results:
+    for app_id, risk in result:
         output_file.write(f"{app_id}, {risk:.2f}\n")
