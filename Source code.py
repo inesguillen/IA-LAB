@@ -61,7 +61,6 @@ def defuzzify(rule_strengths):
             results['HighR'] = max(results['HighR'], degree)  # Get the max degree from this label
 
     max_degrees = [results['LowR'], results['MediumR'], results['HighR']]  # Array with the final max degrees values
-    print("list max degree: ", max_degrees)
 
     # We get the trapezoidal function graph for each risk
     low_risk = skf.trapmf(risks, [-20, -10, 30, 50])
